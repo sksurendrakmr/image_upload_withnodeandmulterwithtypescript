@@ -1,5 +1,6 @@
 export type NoteDto = {
   title: string;
   description?: string;
-  images: string[];
+  noteImages?: string[];
+  noteImgCover?: string;
 };

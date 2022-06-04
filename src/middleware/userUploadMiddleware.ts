@@ -84,7 +84,7 @@ export const uploadUserImage = upload.single("image");
  * best to not even save the file to the disk but instead save it to memory.
  *
  */
-export const resizeUserPhoto = (
+export const resizeUserPhoto = async (
   req: Request,
   res: Response,
   next: NextFunction
@@ -102,7 +102,7 @@ export const resizeUserPhoto = (
   //in other middleware function.
   req.file.filename = `user-${req.body.name}-${Date.now()}.jpeg`;
 
-  sharp(req.file.buffer)
+  await sharp(req.file.buffer)
     .resize(500, 500)
     .toFormat("jpeg")
     .jpeg({ quality: 90 })

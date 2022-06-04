@@ -10,8 +10,11 @@ const noteSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
-    images: {
+    noteImages: {
       type: [String],
+    },
+    noteImgCover: {
+      type: String,
     },
   },
   { timestamps: true }

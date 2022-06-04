@@ -1,4 +1,6 @@
-import { Request } from "express";
+import { NextFunction, Request, Response } from "express";
+import sharp from "sharp";
+
 import multer, { FileFilterCallback } from "multer";
 import { CustomReq, UserDto } from "../dto/UserDto";
 
@@ -34,18 +36,23 @@ import { CustomReq, UserDto } from "../dto/UserDto";
  * we could also store the file in memory as a buffer so that we can
  * use that later by other processes.
  */
-const multerStorage = multer.diskStorage({
-  //req -> current request
-  //file -> currently uploaded file
-  //cb -> cb function (a bit like next Fn in express)
-  destination: (req, file, cb) => {
-    cb(null, "public/imgs/users");
-  },
-  filename: (req: CustomReq<UserDto>, file, callback) => {
-    const ext = file.mimetype.split("/")[1];
-    callback(null, `user-${req.body.name}-${Date.now()}.${ext}`);
-  },
-});
+// const multerStorage = multer.diskStorage({
+//   //req -> current request
+//   //file -> currently uploaded file
+//   //cb -> cb function (a bit like next Fn in express)
+//   destination: (req, file, cb) => {
+//     cb(null, "public/imgs/users");
+//   },
+//   filename: (req: CustomReq<UserDto>, file, callback) => {
+//     const ext = file.mimetype.split("/")[1];
+//     callback(null, `user-${req.body.name}-${Date.now()}.${ext}`);
+//   },
+// });
+
+/**
+ * This way the image will be saved as buffer
+ */
+const multerStorage = multer.memoryStorage();
 
 /**
  * The goal of this function is to test if the uploaded file is
@@ -69,3 +76,37 @@ const upload = multer({
 });
 
 export const uploadUserImage = upload.single("image");
+
+/**
+ * Sharp is very popular and easy to use library for image processing in nodejs.
+ *
+ * Usually, when we do image processing right after uploading a file then it's always
+ * best to not even save the file to the disk but instead save it to memory.
+ *
+ */
+export const resizeUserPhoto = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  if (!req.file) return next();
+  //instead of write the file to disk and here read it again, we simply keep the image in memory.
+  //calling this sharp() with buffer file create an object where we can chain multiple methods in order to do
+  //our image processing.
+  //After image processing, we will write the file to the disk.
+  //toFile needs entire path along with filename to write the file in disk.
+
+  //Determining file name and assign in to req.file.filename
+  //why? Because we rely on req.file.filename to save the image ref to database
+  //as by default req.file.filename is not defined but we need that req.file.filename
+  //in other middleware function.
+  req.file.filename = `user-${req.body.name}-${Date.now()}.jpeg`;
+
+  sharp(req.file.buffer)
+    .resize(500, 500)
+    .toFormat("jpeg")
+    .jpeg({ quality: 90 })
+    .toFile(`public/imgs/users/${req.file.filename}`);
+
+  next();
+};

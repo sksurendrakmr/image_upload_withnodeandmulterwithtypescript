@@ -1,6 +1,8 @@
 import express from "express";
 import mongoose from "mongoose";
 
+import userRoute from "./route/UserRoute";
+
 mongoose
   .connect("mongodb://localhost:27017/img-upload")
   .then(() => console.log("Connected to DB"))
@@ -8,5 +10,6 @@ mongoose
 
 const app = express();
 app.use(express.json());
+app.use("/user", userRoute);
 
 app.listen(8000, () => console.log("Server started.."));
